@@ -1,5 +1,5 @@
-name: 标题
-description: 副标题
+name: 我是标题 
+description: 我是副标题
 title: "Issue标题的默认文本"
 labels: ["所属标签列表的默认值"]
 body:
