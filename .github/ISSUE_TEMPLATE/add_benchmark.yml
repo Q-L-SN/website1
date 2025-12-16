@@ -1,7 +1,7 @@
-name: 报告 Bug
-description: 向我们报告 Bug。
-title: "[Bug]: "
-labels: ["bug"]
+name: 标题
+description: 副标题
+title: "Issue标题的默认文本"
+labels: ["所属标签列表的默认值"]
 body:
   - type: markdown
     attributes:
@@ -9,15 +9,14 @@ body:
         投我以木桃，报之以琼瑶。
         填写之前请阅读 [nc-ai | 关于反馈](https://nc-ai.cn/article/cxnqr517/#%E5%85%B3%E4%BA%8E%E5%8F%8D%E9%A6%88)
   - type: dropdown
-    id: os
+    id: 后台要用到的ID
     attributes:
-      label: 操作系统
-      description: 您在什么操作系统上运行？
+      label: 项目名
+      description: 项目说明
       options:
-        - Windows
-        - Mac
-        - Linux
-        - 其他
+        - 选项1
+        - 选项2
+        - 选项3
       default: 0
     validations:
       required: true
