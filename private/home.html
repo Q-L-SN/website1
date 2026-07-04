@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Benchmark Trust Leaderboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/css/global.css">
+    <link rel="stylesheet" href="/css/home.css">
+    <script src="/js/home.js" type="module"></script>
+</head>
+<body>
+    <global-dialog id="delete-account-dialog" hidden>
+        <div slot="title">Are you sure you want to delete your account?</div>
+        <div slot="body">This action cannot be undone.</div>
+        <div slot="actions">
+            <global-dialog-action class="dialog-close-button">
+                Cancel
+            </global-dialog-action>
+            <global-dialog-action class="dialog-delete-account-button danger">
+                Delete
+            </global-dialog-action>
+        </div>
+    </global-dialog>
+    <global-dialog id="logout-dialog" hidden>
+        <div slot="title">Are you sure you want to log out?</div>
+        <div slot="actions" hidden>
+            <global-dialog-action class="dialog-close-button">
+                Cancel
+            </global-dialog-action>
+            <global-dialog-action class="dialog-logout-this-device-button"></global-dialog-action>
+            <global-dialog-action class="dialog-logout-all-devices-button"></global-dialog-action>
+        </div>
+    </global-dialog>
+    <global-dialog id="login-success-dialog" hidden>
+        <div slot="title">Login successful!</div>
+        <div slot="actions">
+            <global-dialog-action class="dialog-close-button main">
+                OK
+            </global-dialog-action>
+        </div>
+    </global-dialog>
+    <global-dialog id="logout-success-dialog" hidden>
+        <div slot="title">You have been logged out</div>
+        <div slot="actions">
+            <global-dialog-action class="dialog-close-button main">
+                OK
+            </global-dialog-action>
+        </div>
+    </global-dialog>
+    <global-dialog id="delete-account-success-dialog" hidden>
+        <div slot="title">Account successfully deleted</div>
+        <div slot="body">
+            To completely disconnect our app, please visit your GitHub settings and revoke access.
+            Link: <a id="revoke-github-auth-link" target="_blank"></a>
+            (Note: GitHub may ask you to confirm your password to access this security page.)
+        </div>
+        <div slot="actions">
+            <global-dialog-action class="dialog-close-button main">
+                OK
+            </global-dialog-action>
+        </div>
+    </global-dialog>
+    <global-header>
+        <div id="vote-budget-container" hidden>
+            <div id="budget-label">VOTE CAPACITY</div>
+            <div id="budget-track"></div>
+            <div id="budget-count"></div>
+        </div>
+
+        <div id="user-profile" hidden>
+            <div id="user-profile-picture"></div>
+            <span id="user-profile-name"></span>
+            <div id="user-controls">
+                <div id="user-controls-panel">
+                    <div id="logout-button" class="button">
+                        <i class="fa-solid fa-arrow-right-from-bracket"></i>
+                        <span>Log Out</span>
+                    </div>
+                    <div id="delete-account-button" class="button">
+                        <i class="fa-solid fa-user-xmark"></i>
+                        <span>Delete Account</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div id="login-button" class="button">
+            <i class="fa-brands fa-github"></i>
+            <span>Login with GitHub</span>
+        </div>
+    </global-header>
+
+    <div class="main-container">
+        
+        <!-- SIDEBAR: Hierarchy Only -->
+        <div class="sidebar">
+            <div class="templates"></div>
+            <div class="tree">
+                <div class="filter-title">HIERARCHY</div>
+                <div id="tree-content"></div>
+            </div>
+        </div>
+
+        <div class="content-area">
+            
+            <!-- CONTROLS: Search + Dropdown Filters -->
+            <div class="content-controls">
+                
+                <!-- 1. Search Box -->
+                <div class="search-wrapper">
+                    <i class="fa-solid fa-magnifying-glass search-icon"></i>
+                    <input type="text" id="global-search" class="search-input" placeholder="Search benchmarks, criteria, or IDs...">
+                </div>
+
+                <!-- 2. Dropdown Filters 暂时不用 -->
+                <div class="filters-row" hidden>
+                    
+                    <!-- Input Modality -->
+                    <div class="filter-group">
+                        <div class="filter-label">INPUT</div>
+                        <div class="custom-select" id="select-input-modality">
+                            <div class="select-trigger">
+                                <span class="selected-value">Text</span>
+                                <i class="fa-solid fa-chevron-down arrow"></i>
+                            </div>
+                            <div class="select-options">
+                                <div class="option selected" data-value="Text">Text</div>
+                                <div class="option" data-value="Image">Image</div>
+                                <div class="option" data-value="Audio">Audio</div>
+                                <div class="option" data-value="Code">Code</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Output Modality -->
+                    <div class="filter-group">
+                        <div class="filter-label">OUTPUT</div>
+                        <div class="custom-select" id="select-output-modality">
+                            <div class="select-trigger">
+                                <span class="selected-value">Any</span>
+                                <i class="fa-solid fa-chevron-down arrow"></i>
+                            </div>
+                            <div class="select-options">
+                                <div class="option selected" data-value="Any">Any</div>
+                                <div class="option" data-value="Text">Text</div>
+                                <div class="option" data-value="JSON">JSON</div>
+                                <div class="option" data-value="Action">Action</div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <div id="object-list">
+                <div id="suggestions"></div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

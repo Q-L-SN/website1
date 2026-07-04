@@ -1,0 +1,12 @@
+global-header {
+    border: none;
+}
+
+global-dialog {
+    --dialog-overlay-display: none; /* 非模态 */
+}
+
+.dialog-login-button {
+    --button-background: var(--accent-color);
+    --button-hover-background: var(--accent-color);
+}
