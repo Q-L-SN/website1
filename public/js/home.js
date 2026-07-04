@@ -29,6 +29,14 @@ const treeContent = document.getElementById('tree-content');
 
 let currentCategoryID;
 
+function isTemplateSet(templateID) {
+    return templateID !== null && templateID !== undefined;
+}
+
+function normalizeURLPart(value) {
+    return String(value).toLowerCase();
+}
+
 function updateUserProfileDisplay(newProfile) {
     voteBudgetContainer.hidden = false;
     loginButton.hidden = true;
@@ -139,9 +147,9 @@ fetch(`/api/get_page${window.location.pathname}`, {
     }
     async function generateFolderTree(location, point) {
 
-        async function setChildrenAndObjectList(category) {
+        async function setChildrenAndObjectList(category, selectedTemplatePath = []) {
             const doNotGetChildren = !category.is_folder || category.children !== undefined;
-            const getTemplatesList = category.template && category.templatesList === undefined;
+            const getTemplatesList = isTemplateSet(category.template) && category.templatesList === undefined;
             await fetch('/api/load_objects_and_subcategories', {
                 method: 'POST',
                 headers: {
@@ -150,7 +158,8 @@ fetch(`/api/get_page${window.location.pathname}`, {
                 body: JSON.stringify({
                     targetCategory: category,
                     doNotGetChildren: doNotGetChildren,
-                    getTemplatesList: getTemplatesList
+                    getTemplatesList: getTemplatesList,
+                    selectedTemplatePath: selectedTemplatePath
                 })
             })
             .then(response => G.checkErrorCodeInURL(response))
@@ -213,19 +222,23 @@ fetch(`/api/get_page${window.location.pathname}`, {
             return newDisplayTheFirstN;
         }
 
-        function updateTemplatesURL(categoryPath) {
+        function getSelectedTemplatePath() {
             const templatesArray = Array.from(templates.children);
             let selectedTemplates =
                 templatesArray.findIndex(item => item.querySelector('.template-option.selected') === null);
             if (selectedTemplates === -1) {
                 selectedTemplates = templatesArray.length;
             }
-            const templatePath = templatesArray.slice(0, selectedTemplates).map(item => 
-                item.querySelector('.template-option.selected').textContent.toLowerCase()).join('/');
+            return templatesArray.slice(0, selectedTemplates).map(item =>
+                normalizeURLPart(item.querySelector('.template-option.selected').textContent));
+        }
+
+        function updateTemplatesURL(categoryPath) {
+            const templatePath = getSelectedTemplatePath().join('/');
             G.editURL('/rankings/' + categoryPath + (templatePath ? '/' + templatePath : ''), true, false);
         }
 
-        function generateTemplates(leafNode, category) {
+        function generateTemplates(leafNode, category, selectedTemplatePath = []) {
             if (category.displayTheFirstN === undefined) {
                 S.initProperty(category, 'displayTheFirstN', 1);
             }
@@ -241,12 +254,15 @@ fetch(`/api/get_page${window.location.pathname}`, {
                     const option = document.createElement('div');
                     option.className = 'template-option';
                     option.textContent = optionName;
+                    if (normalizeURLPart(optionName) === selectedTemplatePath[index]) {
+                        option.classList.add('selected');
+                    }
                     option.addEventListener('click', async function(event) {
-                        await setChildrenAndObjectList(category);
                         toggleOptionInTemplates(templateBox, option); //必须写在updateTemplatesDisplay前面
                         category.displayTheFirstN =
                             updateTemplatesDisplay(leafNode.dataset.path);
                         updateTemplatesURL(leafNode.dataset.path);
+                        await setChildrenAndObjectList(category, getSelectedTemplatePath());
                     });
                     templateOptions.append(option);
                 });
@@ -258,7 +274,7 @@ fetch(`/api/get_page${window.location.pathname}`, {
         }
 
         for (const child of point) {
-            if (child.is_folder && child.template !== null) {
+            if (child.is_folder && !isTemplateSet(child.template)) {
                 const categoryTree = document.createElement('div');
                 categoryTree.className = 'tree-group';
                 const treeRootItem = document.createElement('div');
@@ -327,17 +343,17 @@ fetch(`/api/get_page${window.location.pathname}`, {
                 }
                 if (child.ID == data.currentCategoryID) {
                     leafCategory.classList.add('selected');
-                    if (child.template) {
-                        await setChildrenAndObjectList(child);
-                        generateTemplates(leafCategory, child);
+                    if (isTemplateSet(child.template)) {
+                        await setChildrenAndObjectList(child, data.selectedTemplatePath ?? []);
+                        generateTemplates(leafCategory, child, data.selectedTemplatePath ?? []);
                     }
                 }
                 leafCategory.addEventListener('click', async function() {
                     if (currentCategoryID !== child.ID) {
                         currentCategoryID = child.ID;
                         await setChildrenAndObjectList(child);
-                        toggleCurrentCategoryInTree(leafCategory, leafCategory.dataset.path, !child.template);
-                        if (child.template) {
+                        toggleCurrentCategoryInTree(leafCategory, leafCategory.dataset.path, !isTemplateSet(child.template));
+                        if (isTemplateSet(child.template)) {
                             generateTemplates(leafCategory, child);
                             updateTemplatesURL(leafCategory.dataset.path);
                         }

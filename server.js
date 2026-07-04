@@ -181,6 +181,95 @@ async function getAllObjects(categoryIDs, { removeObjectsWithZeroVotes = false, 
     return data;
 }
 
+function isTemplateSet(templateID) {
+    return templateID !== null && templateID !== undefined;
+}
+
+function normalizeURLPart(value) {
+    return String(value).toLowerCase();
+}
+
+async function getCategoryByID(categoryID) {
+    if (categoryID === null || categoryID === undefined) {
+        return { ID: null, is_folder: true, template: null };
+    }
+    const [categories] = await db.execute('SELECT * FROM categories WHERE ID = ?', [categoryID]);
+    return categories[0];
+}
+
+async function getSubCategories(parentID) {
+    const [subCategories] = await db.execute('SELECT * FROM categories WHERE parent_ID <=> ? ORDER BY ID', [parentID]);
+    return subCategories;
+}
+
+async function getSubCategoriesForParents(parentIDs) {
+    if (parentIDs.length === 0) {
+        return [];
+    }
+    const [subCategories] = await db.execute(
+        `SELECT * FROM categories WHERE parent_ID IN (${parentIDs.map(() => '?').join(', ')}) ORDER BY parent_ID, ID`,
+        parentIDs
+    );
+    return subCategories;
+}
+
+async function buildTemplatesList(rootCategoryID) {
+    let currentLayer = [await getCategoryByID(rootCategoryID)];
+    if (currentLayer[0] === undefined) {
+        throw { status: 404 };
+    }
+    const templatesList = [];
+    while (currentLayer.length > 0) {
+        const templateID = currentLayer[0].template;
+        if (!isTemplateSet(templateID)) {
+            break;
+        }
+        if (currentLayer.some(category => category.template !== templateID)) {
+            throw { status: 409 };
+        }
+        const [templateRows] = await db.execute('SELECT name FROM category_templates WHERE ID = ?', [templateID]);
+        if (templateRows.length === 0) {
+            throw { status: 409 };
+        }
+        const subCategories = await getSubCategoriesForParents(currentLayer.map(category => category.ID));
+        if (subCategories.length === 0) {
+            break;
+        }
+        const optionNames = [];
+        const optionNameSet = new Set();
+        for (const subCategory of subCategories) {
+            const key = normalizeURLPart(subCategory.name);
+            if (!optionNameSet.has(key)) {
+                optionNameSet.add(key);
+                optionNames.push(subCategory.name);
+            }
+        }
+        templatesList.push({
+            name: templateRows[0].name,
+            optionsList: optionNames
+        });
+        currentLayer = subCategories;
+    }
+    return templatesList;
+}
+
+async function resolveTemplateCategory(rootCategoryID, selectedTemplatePath = []) {
+    let currentCategory = await getCategoryByID(rootCategoryID);
+    if (currentCategory === undefined) {
+        throw { status: 404 };
+    }
+    for (const pathPart of selectedTemplatePath) {
+        const subCategories = await getSubCategories(currentCategory.ID);
+        const normalizedPathPart = normalizeURLPart(pathPart);
+        const nextCategory = subCategories.find(category => normalizeURLPart(category.name) === normalizedPathPart);
+        if (nextCategory === undefined) {
+            throw { status: 404 };
+        }
+        currentCategory = nextCategory;
+    }
+    return currentCategory;
+}
+
 API.post('/get_page{/*path}', async (req, res, next) => {
     const path = (req.params.path ?? []).filter(item => item !== '').map(item => item.toLowerCase());
     if (path.length === 1) { // 'rankings'
@@ -193,18 +282,29 @@ API.post('/get_page{/*path}', async (req, res, next) => {
     const data = {
         categoryTree: [],
         objectList: [],
-        currentCategoryID: null
+        currentCategoryID: null,
+        selectedTemplatePath: []
     };
     let parentID = null;
+    let effectiveCategoryID = null;
     let point = data.categoryTree; // 从根开始构建分类树
     let child = null;
     for (const [index, item] of path.entries()) {
-        const [categories] = await db.execute('SELECT * FROM categories WHERE parent_ID <=> ?'
-            , [parentID]);
+        const categories = await getSubCategories(parentID);
         point.push(...categories);
         child = point.find(obj => obj.name.toLowerCase() === item);
         if (!child) {
             return next({ status: 404 });
+        }
+        parentID = child.ID;
+        data.currentCategoryID = parentID;
+        effectiveCategoryID = parentID;
+        if (isTemplateSet(child.template)) {
+            data.selectedTemplatePath = path.slice(index + 1);
+            if (data.selectedTemplatePath.length > 0) {
+                effectiveCategoryID = (await resolveTemplateCategory(child.ID, data.selectedTemplatePath)).ID;
+            }
+            break;
         }
         if (child.is_folder) {
             S.initProperty(child, 'expanded', true);
@@ -215,37 +315,39 @@ API.post('/get_page{/*path}', async (req, res, next) => {
                 return next({ status: 404 });
             }
         }
-        parentID = child.ID;
     }
     data.currentCategoryID = parentID;
-    if (child === null || child.is_folder) {
-        const [subCategories] = await db.execute('SELECT * FROM categories WHERE parent_ID <=> ?', [parentID]);
+    if (child === null || (child.is_folder && !isTemplateSet(child.template))) {
+        const subCategories = await getSubCategories(parentID);
         point.push(...subCategories);
     }
-    const categoryIDs = [data.currentCategoryID];
-    categoryIDs.push(...await getAllSubCategoriesIDs(data.currentCategoryID));
+    const categoryIDs = [effectiveCategoryID];
+    categoryIDs.push(...await getAllSubCategoriesIDs(effectiveCategoryID));
     data.objectList = await getAllObjects(categoryIDs, { removeObjectsWithZeroVotes: true }); // 只保留有投票的对象
     res.json(data);
 });
 
 API.post('/load_objects_and_subcategories', async (req, res, next) => {
-    const targetCategory = req.body.targetCategory;
-    const onlyObjects = req.body.onlyObjects;
+    const targetCategory = await getCategoryByID(req.body.targetCategory?.ID ?? null);
+    if (targetCategory === undefined) {
+        return next({ status: 404 });
+    }
+    const doNotGetChildren = req.body.doNotGetChildren;
+    const selectedTemplatePath = req.body.selectedTemplatePath ?? [];
+    const effectiveCategory = await resolveTemplateCategory(targetCategory.ID, selectedTemplatePath);
     const data = {
         subcategories: undefined,
         objectList: [],
-        templateName: undefined
+        templatesList: undefined
     };
-    if (req.body.template) {
-        const [templateRows] = await db.execute('SELECT name FROM category_templates WHERE ID = ?', [req.body.template]);
-        data.templateName = templateRows[0].name;
+    if (req.body.getTemplatesList && isTemplateSet(targetCategory.template)) {
+        data.templatesList = await buildTemplatesList(targetCategory.ID);
     }
-    if (targetCategory.is_folder && onlyObjects === false) { //tinyint(1)是数字，不能===true，要不就用Boolean()转换一下
-        const [subCategories] = await db.execute('SELECT * FROM categories WHERE parent_ID <=> ?', [targetCategory.ID]);
-        data.subcategories = subCategories;
+    if (targetCategory.is_folder && !doNotGetChildren && !isTemplateSet(targetCategory.template)) {
+        data.subcategories = await getSubCategories(targetCategory.ID);
     }
-    const categoryIDs = [targetCategory.ID];
-    categoryIDs.push(...await getAllSubCategoriesIDs(targetCategory.ID));
+    const categoryIDs = [effectiveCategory.ID];
+    categoryIDs.push(...await getAllSubCategoriesIDs(effectiveCategory.ID));
     data.objectList = await getAllObjects(categoryIDs, { removeObjectsWithZeroVotes: true }); // 只保留有投票的对象
     res.json(data);
 });
