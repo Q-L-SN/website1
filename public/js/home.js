@@ -225,7 +225,7 @@ function renderObjectList(objects) {
     const filteredObjects = objects.filter(objectMatchesActiveFilters);
     objectList.replaceChildren(suggestions);
     if (filteredObjects.length === 0) {
-        objectList.append(createNoResultsMessage('No benchmarks match the selected filters'));
+        objectList.append(createNoResultsMessage('No evaluation items match the selected filters'));
         return;
     }
     for (const obj of filteredObjects) {

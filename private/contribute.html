@@ -40,9 +40,9 @@
                     <i class="fa-solid fa-flag"></i>
                     <span>Report Issue</span>
                 </button>
-                <button class="mode-tab" type="button" data-form-target="benchmark-form">
+                <button class="mode-tab" type="button" data-form-target="evaluation-item-form">
                     <i class="fa-solid fa-plus"></i>
-                    <span>New Benchmark</span>
+                    <span>New Evaluation Item</span>
                 </button>
             </div>
         </section>
@@ -85,14 +85,14 @@
                 </div>
             </form>
 
-            <form id="benchmark-form" class="contribution-form" data-contribution-type="new_benchmark" hidden>
+            <form id="evaluation-item-form" class="contribution-form" data-contribution-type="new_benchmark" hidden>
                 <div class="form-grid">
                     <label class="field">
-                        <span>Benchmark Name</span>
+                        <span>Evaluation Item Name</span>
                         <input name="name" type="text" maxlength="128" required>
                     </label>
                     <label class="field">
-                        <span>Benchmark URL</span>
+                        <span>Evaluation Item URL</span>
                         <input name="url" type="url" maxlength="512" placeholder="https://">
                     </label>
                     <label class="field">
@@ -127,7 +127,7 @@
                     </label>
                     <label class="field checkbox-field wide">
                         <input name="isRealtime" type="checkbox">
-                        <span>Realtime benchmark</span>
+                        <span>Realtime evaluation</span>
                     </label>
                     <label class="field wide">
                         <span>Evidence or Notes</span>
@@ -137,7 +137,7 @@
                 <div class="form-actions">
                     <button class="submit-button" type="submit">
                         <i class="fa-solid fa-paper-plane"></i>
-                        <span>Submit Benchmark</span>
+                        <span>Submit Evaluation Item</span>
                     </button>
                 </div>
             </form>

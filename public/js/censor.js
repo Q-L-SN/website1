@@ -51,7 +51,7 @@ function createLogItem(log) {
     title.className = 'log-title';
     const type = document.createElement('span');
     type.className = 'log-type';
-    type.textContent = log.content.type === 'new_benchmark' ? 'NEW BENCHMARK' : 'REPORT';
+    type.textContent = log.content.type === 'new_benchmark' ? 'NEW EVALUATION ITEM' : 'REPORT';
     const status = document.createElement('span');
     status.className = 'log-status ' + log.status;
     status.textContent = log.status.toUpperCase();
