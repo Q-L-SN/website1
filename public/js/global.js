@@ -181,7 +181,7 @@ class globalHeader extends HTMLElement { // 定义全局导航栏组件
                 }
             </style>
             <div id="logo-container">
-                <a href="/" class="logo">TRUST<span class="highlight">BENCH</span></a>
+                <a href="/" class="logo">bench<span class="highlight">poll</span></a>
             </div>
             <div class="header-slot">
                 <slot></slot>

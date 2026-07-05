@@ -1,6 +1,6 @@
-# TRUSTBENCH
+# benchpoll
 
-TRUSTBENCH is a Node.js/Express web app for browsing and voting on ranked benchmark objects. The app serves private HTML pages, public CSS/JS assets, GitHub OAuth login, session-backed user accounts, admin login, and ranking pages backed by a MySQL database.
+benchpoll is a Node.js/Express web app for browsing and voting on ranked benchmark objects. The app serves private HTML pages, public CSS/JS assets, GitHub OAuth login, session-backed user accounts, admin login, and ranking pages backed by a MySQL database.
 
 ## Current Stack
 
@@ -139,9 +139,9 @@ Make sure local DNS/hosts and certificate setup match the domain you use in the 
 - Server-side API errors are routed through the centralized Express error handler in `server.js`.
 - `node --check server.js` and `node --check public/js/home.js` are useful quick syntax checks.
 
-# TRUSTBENCH 中文说明
+# benchpoll 中文说明
 
-TRUSTBENCH 是一个基于 Node.js/Express 的网页应用，用于浏览、投票和展示 benchmark 对象排行。项目包含私有 HTML 页面、公开 CSS/JS 静态资源、GitHub OAuth 登录、基于 session 的用户账号、管理员登录，以及由 MySQL 数据库驱动的排行页面。
+benchpoll 是一个基于 Node.js/Express 的网页应用，用于浏览、投票和展示 benchmark 对象排行。项目包含私有 HTML 页面、公开 CSS/JS 静态资源、GitHub OAuth 登录、基于 session 的用户账号、管理员登录，以及由 MySQL 数据库驱动的排行页面。
 
 ## 当前技术栈
 

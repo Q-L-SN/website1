@@ -1,7 +1,7 @@
 {
-  "name": "thewebapp2",
+  "name": "benchpoll",
   "version": "0.0.0",
-  "description": "thewebapp2",
+  "description": "benchpoll",
   "main": "server.js",
   "type": "module",
   "author": {
