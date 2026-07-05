@@ -511,27 +511,29 @@
     text-transform: uppercase;
 }
 
-/* My Vote Status Dots */
+/* My Vote Status */
 .my-vote-status {
     display: flex;
-    gap: 5px;
+    align-items: center;
+    justify-content: center;
+    width: 10px;
+    min-width: 10px;
     opacity: 1;
 }
 
-.my-dot {
-    width: 5px;
-    height: 5px;
+.my-vote-dot {
+    width: 8px;
+    height: 8px;
     border-radius: 50%;
-    background-color: #262626;
     transition: all 0.2s;
 }
 
-.my-dot.filled-up {
+.my-vote-dot.filled-up {
     background-color: var(--accent-vote);
     box-shadow: 0 0 6px rgba(34, 197, 94, 0.4);
 }
 
-.my-dot.filled-down {
+.my-vote-dot.filled-down {
     background-color: var(--accent-down);
     box-shadow: 0 0 6px rgba(239, 68, 68, 0.4);
 }

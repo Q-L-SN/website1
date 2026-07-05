@@ -81,14 +81,18 @@ function updateVoteDisplay(objItem, myVote, voteSum) {
     downButton.classList.toggle('voted-down', myVote === -1);
     voteSumElement.textContent = voteSum;
     voteSumElement.classList.toggle('negative', voteSum < 0);
+    voteStatus.replaceChildren();
+    if (myVote !== 1 && myVote !== -1) {
+        return;
+    }
     const dot = document.createElement('div');
-    dot.className = 'my-dot';
+    dot.className = 'my-vote-dot';
     if (myVote === 1) {
         dot.classList.add('filled-up');
-    } else if (myVote === -1) {
+    } else {
         dot.classList.add('filled-down');
     }
-    voteStatus.replaceChildren(dot);
+    voteStatus.append(dot);
 }
 
 function submitVote(objItem, targetObjectID, value) {
