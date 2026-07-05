@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contribute - TRUSTBENCH</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/css/global.css">
+    <link rel="stylesheet" href="/css/contribute.css">
+    <script src="/js/contribute.js" type="module"></script>
+</head>
+<body>
+    <global-dialog id="submit-success-dialog" hidden>
+        <div slot="title">Submission received</div>
+        <div slot="body">Your contribution is now waiting for review.</div>
+        <div slot="actions">
+            <global-dialog-action class="dialog-close-button main">OK</global-dialog-action>
+        </div>
+    </global-dialog>
+    <global-dialog id="submit-error-dialog" hidden>
+        <div slot="title">Submission failed</div>
+        <div slot="body">Please check the highlighted fields and try again.</div>
+        <div slot="actions">
+            <global-dialog-action class="dialog-close-button main">OK</global-dialog-action>
+        </div>
+    </global-dialog>
+
+    <global-header>
+        <a class="header-link" href="/">Rankings</a>
+    </global-header>
+
+    <main class="contribute-page">
+        <section class="contribute-header">
+            <div>
+                <p class="eyebrow">CONTRIBUTE</p>
+                <h1>Improve TRUSTBENCH</h1>
+            </div>
+            <div class="mode-tabs" role="tablist" aria-label="Contribution type">
+                <button class="mode-tab selected" type="button" data-form-target="issue-form">
+                    <i class="fa-solid fa-flag"></i>
+                    <span>Report Issue</span>
+                </button>
+                <button class="mode-tab" type="button" data-form-target="benchmark-form">
+                    <i class="fa-solid fa-plus"></i>
+                    <span>New Benchmark</span>
+                </button>
+            </div>
+        </section>
+
+        <section class="form-surface">
+            <form id="issue-form" class="contribution-form" data-contribution-type="report_issue">
+                <div class="form-grid">
+                    <label class="field">
+                        <span>Issue Type</span>
+                        <select name="issueType" required>
+                            <option value="incorrect_info">Incorrect information</option>
+                            <option value="missing_source">Missing source</option>
+                            <option value="broken_link">Broken link</option>
+                            <option value="duplicate">Duplicate entry</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </label>
+                    <label class="field">
+                        <span>Affected Item</span>
+                        <input name="targetName" type="text" maxlength="128" required>
+                    </label>
+                    <label class="field">
+                        <span>Page URL</span>
+                        <input name="pageURL" type="url" maxlength="512" placeholder="https://">
+                    </label>
+                    <label class="field">
+                        <span>Source URL</span>
+                        <input name="sourceURL" type="url" maxlength="512" placeholder="https://">
+                    </label>
+                    <label class="field wide">
+                        <span>Details</span>
+                        <textarea name="details" maxlength="2000" required></textarea>
+                    </label>
+                </div>
+                <div class="form-actions">
+                    <button class="submit-button" type="submit">
+                        <i class="fa-solid fa-paper-plane"></i>
+                        <span>Submit Report</span>
+                    </button>
+                </div>
+            </form>
+
+            <form id="benchmark-form" class="contribution-form" data-contribution-type="new_benchmark" hidden>
+                <div class="form-grid">
+                    <label class="field">
+                        <span>Benchmark Name</span>
+                        <input name="name" type="text" maxlength="128" required>
+                    </label>
+                    <label class="field">
+                        <span>Benchmark URL</span>
+                        <input name="url" type="url" maxlength="512" placeholder="https://">
+                    </label>
+                    <label class="field">
+                        <span>Input</span>
+                        <select name="inputModality">
+                            <option value="">Unknown</option>
+                            <option value="text">Text</option>
+                            <option value="image">Image</option>
+                            <option value="audio">Audio</option>
+                            <option value="video">Video</option>
+                            <option value="mixed">Mixed</option>
+                            <option value="action">Action</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </label>
+                    <label class="field">
+                        <span>Output</span>
+                        <select name="outputModality">
+                            <option value="">Unknown</option>
+                            <option value="text">Text</option>
+                            <option value="image">Image</option>
+                            <option value="audio">Audio</option>
+                            <option value="video">Video</option>
+                            <option value="mixed">Mixed</option>
+                            <option value="action">Action</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </label>
+                    <label class="field wide">
+                        <span>Suggested Category Path</span>
+                        <input name="categoryPath" type="text" maxlength="512">
+                    </label>
+                    <label class="field checkbox-field wide">
+                        <input name="isRealtime" type="checkbox">
+                        <span>Realtime benchmark</span>
+                    </label>
+                    <label class="field wide">
+                        <span>Evidence or Notes</span>
+                        <textarea name="details" maxlength="2000" required></textarea>
+                    </label>
+                </div>
+                <div class="form-actions">
+                    <button class="submit-button" type="submit">
+                        <i class="fa-solid fa-paper-plane"></i>
+                        <span>Submit Benchmark</span>
+                    </button>
+                </div>
+            </form>
+        </section>
+    </main>
+</body>
+</html>

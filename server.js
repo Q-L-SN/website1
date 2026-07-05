@@ -536,8 +536,81 @@ page.get('/adminlogin', async (req, res) => {
     res.sendFile(currentDir + '/private/adminlogin.html');
 });
 
+function normalizeString(value, maxLength, required = false) {
+    if (typeof value !== 'string') {
+        value = '';
+    }
+    value = value.trim();
+    if (required && value === '') {
+        throw { status: 400 };
+    }
+    if (value.length > maxLength) {
+        throw { status: 400 };
+    }
+    return value;
+}
+
+function normalizeOptionalURL(value) {
+    value = normalizeString(value, 512);
+    if (value === '') {
+        return '';
+    }
+    let url;
+    try {
+        url = new URL(value);
+    } catch {
+        throw { status: 400 };
+    }
+    if (!['http:', 'https:'].includes(url.protocol)) {
+        throw { status: 400 };
+    }
+    return url.toString();
+}
+
+function buildContributionContent(body) {
+    const type = body.type;
+    if (type === 'report_issue') {
+        const allowedIssueTypes = new Set(['incorrect_info', 'missing_source', 'broken_link', 'duplicate', 'other']);
+        if (!allowedIssueTypes.has(body.issueType)) {
+            throw { status: 400 };
+        }
+        return {
+            schemaVersion: 1,
+            type: type,
+            issueType: body.issueType,
+            targetName: normalizeString(body.targetName, 128, true),
+            pageURL: normalizeOptionalURL(body.pageURL),
+            sourceURL: normalizeOptionalURL(body.sourceURL),
+            details: normalizeString(body.details, 2000, true)
+        };
+    }
+    if (type === 'new_benchmark') {
+        const allowedModalities = new Set(['', 'text', 'image', 'audio', 'video', 'mixed', 'other', 'action']);
+        if (!allowedModalities.has(body.inputModality) || !allowedModalities.has(body.outputModality)) {
+            throw { status: 400 };
+        }
+        return {
+            schemaVersion: 1,
+            type: type,
+            name: normalizeString(body.name, 128, true),
+            url: normalizeOptionalURL(body.url),
+            inputModality: body.inputModality || null,
+            outputModality: body.outputModality || null,
+            isRealtime: Boolean(body.isRealtime),
+            categoryPath: normalizeString(body.categoryPath, 512),
+            details: normalizeString(body.details, 2000, true)
+        };
+    }
+    throw { status: 400 };
+}
+
 API.post('/submit_contribution', requireAuthForAPI, async (req, res) => {
-    res.json({ error: null });
+    const content = buildContributionContent(req.body);
+    await db.execute(
+        'INSERT INTO moderation_logs (content, report_count, user_id) VALUES (?, ?, ?)',
+        [JSON.stringify(content), 1, req.session.userID]
+    );
+    res.status(204).end();
 });
 
 API.post('/admin_login', async (req, res, next) => {
