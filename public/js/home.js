@@ -10,6 +10,7 @@ const logoutDialog = document.getElementById('logout-dialog');
 const logoutSuccessDialog = document.getElementById('logout-success-dialog');
 const deleteAccountDialog = document.getElementById('delete-account-dialog');
 const deleteAccountSuccessDialog = document.getElementById('delete-account-success-dialog');
+const voteQuotaDialog = document.getElementById('vote-quota-dialog');
 const dialogLogoutThisDeviceButton = logoutDialog.querySelector('.dialog-logout-this-device-button');
 const dialogLogoutAllDevicesButton = logoutDialog.querySelector('.dialog-logout-all-devices-button');
 const dialogDeleteAccountButton = deleteAccountDialog.querySelector('.dialog-delete-account-button');
@@ -28,6 +29,8 @@ const suggestions = document.getElementById('suggestions');
 const treeContent = document.getElementById('tree-content');
 
 let currentCategoryID;
+let currentVoteTargetCategoryID;
+let currentUserProfile;
 
 function isTemplateSet(templateID) {
     return templateID !== null && templateID !== undefined;
@@ -38,17 +41,25 @@ function normalizeURLPart(value) {
 }
 
 function updateUserProfileDisplay(newProfile) {
+    currentUserProfile = {
+        ...(currentUserProfile ?? {}),
+        ...newProfile
+    };
     voteBudgetContainer.hidden = false;
     loginButton.hidden = true;
     userProfile.hidden = false;
-    userProfilePicture.style.backgroundImage = `url(${newProfile.userProfilePictureURL})`;
-    userProfileName.textContent = newProfile.userName;
+    if (currentUserProfile.userProfilePictureURL !== undefined) {
+        userProfilePicture.style.backgroundImage = `url(${currentUserProfile.userProfilePictureURL})`;
+    }
+    if (currentUserProfile.userName !== undefined) {
+        userProfileName.textContent = currentUserProfile.userName;
+    }
     budgetTrack.replaceChildren();
-    budgetCount.textContent = `${newProfile.votesPerUser - newProfile.userVoteUsed}/${newProfile.votesPerUser}`;
-    for (let i = 0; i < newProfile.votesPerUser; i++) {
+    budgetCount.textContent = `${currentUserProfile.votesPerUser - currentUserProfile.userVoteUsed}/${currentUserProfile.votesPerUser}`;
+    for (let i = 0; i < currentUserProfile.votesPerUser; i++) {
         const dot = document.createElement('div');
         dot.classList.add('budget-dot');
-        if (i < newProfile.votesPerUser - newProfile.userVoteUsed) {
+        if (i < currentUserProfile.votesPerUser - currentUserProfile.userVoteUsed) {
             dot.classList.add('active');
         } else {
             dot.classList.add('empty');
@@ -58,6 +69,58 @@ function updateUserProfileDisplay(newProfile) {
     document.querySelectorAll('.my-vote-status').forEach(voteStatus => {
         voteStatus.replaceChildren();
         //
+    });
+}
+
+function updateVoteDisplay(objItem, myVote, voteSum) {
+    const upButton = objItem.querySelector('.btn-vote.up');
+    const downButton = objItem.querySelector('.btn-vote.down');
+    const voteSumElement = objItem.querySelector('.vote-sum');
+    const voteStatus = objItem.querySelector('.my-vote-status');
+    upButton.classList.toggle('voted', myVote === 1);
+    downButton.classList.toggle('voted-down', myVote === -1);
+    voteSumElement.textContent = voteSum;
+    voteSumElement.classList.toggle('negative', voteSum < 0);
+    const dot = document.createElement('div');
+    dot.className = 'my-dot';
+    if (myVote === 1) {
+        dot.classList.add('filled-up');
+    } else if (myVote === -1) {
+        dot.classList.add('filled-down');
+    }
+    voteStatus.replaceChildren(dot);
+}
+
+function submitVote(objItem, targetObjectID, value) {
+    objItem.querySelectorAll('.btn-vote').forEach(button => {
+        button.style.pointerEvents = 'none';
+    });
+    fetch('/api/submit_vote', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            targetObjectID: targetObjectID,
+            targetCategoryID: currentVoteTargetCategoryID ?? null,
+            value: value
+        })
+    })
+    .then(response => {
+        if (response.status === 409) {
+            voteQuotaDialog.hidden = false;
+            S.breakInThen();
+        }
+        return G.checkErrorCodeInURL(response);
+    })
+    .then(data => {
+        updateVoteDisplay(objItem, data.object.my_vote, data.object.vote_sum);
+        updateUserProfileDisplay(data.profile);
+    })
+    .finally(() => {
+        objItem.querySelectorAll('.btn-vote').forEach(button => {
+            button.style.pointerEvents = '';
+        });
     });
 }
 
@@ -109,6 +172,13 @@ function createListItem(obj) {
     if (obj.is_realtime) {
         objItem.querySelector('.realtime-indicator').hidden = false;
     }
+    updateVoteDisplay(objItem, obj.my_vote, obj.vote_sum);
+    objItem.querySelector('.btn-vote.up').addEventListener('click', () => {
+        submitVote(objItem, obj.ID, 1);
+    });
+    objItem.querySelector('.btn-vote.down').addEventListener('click', () => {
+        submitVote(objItem, obj.ID, -1);
+    });
     switch (obj.rank) {
     case 1:
         objItem.querySelector('.col-rank').classList.add('rank-first');
@@ -135,6 +205,7 @@ fetch(`/api/get_page${window.location.pathname}`, {
 .then(response => G.checkErrorCodeInURL(response))
 .then(async data => {
     currentCategoryID = data.currentCategoryID;
+    currentVoteTargetCategoryID = data.voteTargetCategoryID;
     if (data.jump === true) {
         G.editURL('/', false, true);
         S.breakInThen();
@@ -164,6 +235,7 @@ fetch(`/api/get_page${window.location.pathname}`, {
             })
             .then(response => G.checkErrorCodeInURL(response))
             .then(data => {
+                currentVoteTargetCategoryID = data.voteTargetCategoryID;
                 if (data.subcategories !== undefined) {
                     category.children = data.subcategories;
                 }

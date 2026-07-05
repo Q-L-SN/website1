@@ -145,7 +145,7 @@ async function getAllSubCategoriesIDs(categoryID, arr = []) {
     return arr;
 }
 
-async function getAllObjects(categoryIDs, { removeObjectsWithZeroVotes = false, objectList = null} = {}) {
+async function getAllObjects(categoryIDs, { removeObjectsWithZeroVotes = false, objectList = null, userID = null} = {}) {
     const [objects] = await db.execute('SELECT * FROM objects');
     for (let objectIndex = 0; objectIndex < objects.length; objectIndex++) {
         const object = objects[objectIndex];
@@ -162,6 +162,21 @@ async function getAllObjects(categoryIDs, { removeObjectsWithZeroVotes = false, 
         if (removeObjectsWithZeroVotes && object.vote_sum === 0) {
             objects.splice(objectIndex, 1); // 移除零票对象
             objectIndex--; // 调整索引以避免跳过下一个对象
+            continue;
+        }
+        if (userID) {
+            const [myVotes] = await db.execute(`
+                SELECT value FROM votes
+                WHERE user_ID = ?
+                AND target_object_ID = ?
+                AND ((target_category_ID IN (${categoryIDs.map(() => '?').join(', ')}) OR target_category_ID IS NULL)
+                AND TIMESTAMPDIFF(MONTH, date, NOW()) < 3)
+                ORDER BY date DESC, ID DESC
+                LIMIT 1`
+                , [userID, object.ID, ...categoryIDs]);
+            object.my_vote = myVotes[0]?.value ?? null;
+        } else {
+            object.my_vote = null;
         }
     }
     objects.sort((a, b) => (b.vote_sum - a.vote_sum) || (a.ID - b.ID));
@@ -323,7 +338,11 @@ API.post('/get_page{/*path}', async (req, res, next) => {
     }
     const categoryIDs = [effectiveCategoryID];
     categoryIDs.push(...await getAllSubCategoriesIDs(effectiveCategoryID));
-    data.objectList = await getAllObjects(categoryIDs, { removeObjectsWithZeroVotes: true }); // 只保留有投票的对象
+    data.voteTargetCategoryID = effectiveCategoryID;
+    data.objectList = await getAllObjects(categoryIDs, {
+        removeObjectsWithZeroVotes: true,
+        userID: req.session.userID
+    }); // 只保留有投票的对象
     res.json(data);
 });
 
@@ -348,7 +367,11 @@ API.post('/load_objects_and_subcategories', async (req, res, next) => {
     }
     const categoryIDs = [effectiveCategory.ID];
     categoryIDs.push(...await getAllSubCategoriesIDs(effectiveCategory.ID));
-    data.objectList = await getAllObjects(categoryIDs, { removeObjectsWithZeroVotes: true }); // 只保留有投票的对象
+    data.voteTargetCategoryID = effectiveCategory.ID;
+    data.objectList = await getAllObjects(categoryIDs, {
+        removeObjectsWithZeroVotes: true,
+        userID: req.session.userID
+    }); // 只保留有投票的对象
     res.json(data);
 });
 
@@ -381,8 +404,114 @@ API.post('/search_suggestions', async (req, res, next) => {
     };
     const categoryIDs = [categoryID];
     categoryIDs.push(...await getAllSubCategoriesIDs(categoryID));
-    objects = await getAllObjects(categoryIDs, { objectList: objects }); // 计算这些对象的票数
+    objects = await getAllObjects(categoryIDs, {
+        objectList: objects,
+        userID: req.session.userID
+    }); // 计算这些对象的票数
     res.json(objects);
+});
+
+API.post('/submit_vote', requireAuthForAPI, async (req, res, next) => {
+    const targetObjectID = Number(req.body.targetObjectID);
+    const targetCategoryID = req.body.targetCategoryID === null || req.body.targetCategoryID === undefined
+        ? null
+        : Number(req.body.targetCategoryID);
+    const value = Number(req.body.value);
+    if (!Number.isInteger(targetObjectID) || targetObjectID <= 0 ||
+        (targetCategoryID !== null && (!Number.isInteger(targetCategoryID) || targetCategoryID <= 0)) ||
+        ![1, -1].includes(value)) {
+        return next({ status: 400 });
+    }
+    const [objectRows] = await db.execute('SELECT ID FROM objects WHERE ID = ?', [targetObjectID]);
+    if (objectRows.length === 0) {
+        return next({ status: 404 });
+    }
+    if (targetCategoryID !== null) {
+        const [categoryRows] = await db.execute('SELECT ID FROM categories WHERE ID = ?', [targetCategoryID]);
+        if (categoryRows.length === 0) {
+            return next({ status: 404 });
+        }
+    }
+
+    const connection = await db.getConnection();
+    try {
+        await connection.beginTransaction();
+        const [userRows] = await connection.execute(
+            'SELECT vote_quota, vote_used FROM users WHERE ID = ? FOR UPDATE',
+            [req.session.userID]
+        );
+        if (userRows.length === 0) {
+            throw { status: 401, body: { isAdmin: false } };
+        }
+        const [existingVotes] = await connection.execute(`
+            SELECT ID, value FROM votes
+            WHERE user_ID = ?
+            AND target_object_ID = ?
+            AND target_category_ID <=> ?
+            AND TIMESTAMPDIFF(MONTH, date, NOW()) < 3
+            ORDER BY date DESC, ID DESC
+            FOR UPDATE`,
+            [req.session.userID, targetObjectID, targetCategoryID]
+        );
+        if (existingVotes.length === 0) {
+            if (userRows[0].vote_used >= userRows[0].vote_quota) {
+                throw { status: 409, body: { error: 'vote_quota_exceeded' } };
+            }
+            await connection.execute(
+                `INSERT INTO votes (user_ID, target_object_ID, target_category_ID, value)
+                VALUES (?, ?, ?, ?)`,
+                [req.session.userID, targetObjectID, targetCategoryID, value]
+            );
+            await connection.execute('UPDATE users SET vote_used = vote_used + 1 WHERE ID = ?', [req.session.userID]);
+        } else if (existingVotes[0].value === value) {
+            await connection.execute(`
+                DELETE FROM votes
+                WHERE user_ID = ?
+                AND target_object_ID = ?
+                AND target_category_ID <=> ?
+                AND TIMESTAMPDIFF(MONTH, date, NOW()) < 3`,
+                [req.session.userID, targetObjectID, targetCategoryID]
+            );
+            await connection.execute(
+                'UPDATE users SET vote_used = IF(vote_used > 0, vote_used - 1, 0) WHERE ID = ?',
+                [req.session.userID]
+            );
+        } else {
+            await connection.execute(`
+                UPDATE votes SET value = ?, date = NOW()
+                WHERE user_ID = ?
+                AND target_object_ID = ?
+                AND target_category_ID <=> ?
+                AND TIMESTAMPDIFF(MONTH, date, NOW()) < 3`,
+                [value, req.session.userID, targetObjectID, targetCategoryID]
+            );
+        }
+        await connection.commit();
+    } catch (err) {
+        await connection.rollback();
+        throw err;
+    } finally {
+        connection.release();
+    }
+
+    const categoryIDs = [targetCategoryID];
+    categoryIDs.push(...await getAllSubCategoriesIDs(targetCategoryID));
+    const [updatedObject] = await getAllObjects(categoryIDs, {
+        objectList: [{ ID: targetObjectID }],
+        userID: req.session.userID
+    });
+    const [profileRows] = await db.execute(
+        'SELECT vote_quota AS votesPerUser, vote_used AS userVoteUsed FROM users WHERE ID = ?',
+        [req.session.userID]
+    );
+    res.json({
+        object: {
+            ID: updatedObject.ID,
+            vote_sum: updatedObject.vote_sum,
+            my_vote: updatedObject.my_vote
+        },
+        profile: profileRows[0]
+    });
 });
 
 page.get('/login', async (req, res) => {

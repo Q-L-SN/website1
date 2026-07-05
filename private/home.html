@@ -61,6 +61,15 @@
             </global-dialog-action>
         </div>
     </global-dialog>
+    <global-dialog id="vote-quota-dialog" hidden>
+        <div slot="title">No vote capacity left</div>
+        <div slot="body">You have used all available votes. Remove an existing vote before voting on another item.</div>
+        <div slot="actions">
+            <global-dialog-action class="dialog-close-button main">
+                OK
+            </global-dialog-action>
+        </div>
+    </global-dialog>
     <global-header>
         <div id="vote-budget-container" hidden>
             <div id="budget-label">VOTE CAPACITY</div>
