@@ -121,22 +121,26 @@
                     <input type="text" id="global-search" class="search-input" placeholder="Search benchmarks, criteria, or IDs...">
                 </div>
 
-                <!-- 2. Dropdown Filters 暂时不用 -->
-                <div class="filters-row" hidden>
+                <!-- 2. Dropdown Filters -->
+                <div class="filters-row">
                     
                     <!-- Input Modality -->
                     <div class="filter-group">
                         <div class="filter-label">INPUT</div>
                         <div class="custom-select" id="select-input-modality">
                             <div class="select-trigger">
-                                <span class="selected-value">Text</span>
+                                <span class="selected-value">Any</span>
                                 <i class="fa-solid fa-chevron-down arrow"></i>
                             </div>
                             <div class="select-options">
-                                <div class="option selected" data-value="Text">Text</div>
-                                <div class="option" data-value="Image">Image</div>
-                                <div class="option" data-value="Audio">Audio</div>
-                                <div class="option" data-value="Code">Code</div>
+                                <div class="option selected" data-value="">Any</div>
+                                <div class="option" data-value="text">Text</div>
+                                <div class="option" data-value="image">Image</div>
+                                <div class="option" data-value="audio">Audio</div>
+                                <div class="option" data-value="video">Video</div>
+                                <div class="option" data-value="mixed">Mixed</div>
+                                <div class="option" data-value="action">Action</div>
+                                <div class="option" data-value="other">Other</div>
                             </div>
                         </div>
                     </div>
@@ -150,10 +154,14 @@
                                 <i class="fa-solid fa-chevron-down arrow"></i>
                             </div>
                             <div class="select-options">
-                                <div class="option selected" data-value="Any">Any</div>
-                                <div class="option" data-value="Text">Text</div>
-                                <div class="option" data-value="JSON">JSON</div>
-                                <div class="option" data-value="Action">Action</div>
+                                <div class="option selected" data-value="">Any</div>
+                                <div class="option" data-value="text">Text</div>
+                                <div class="option" data-value="image">Image</div>
+                                <div class="option" data-value="audio">Audio</div>
+                                <div class="option" data-value="video">Video</div>
+                                <div class="option" data-value="mixed">Mixed</div>
+                                <div class="option" data-value="action">Action</div>
+                                <div class="option" data-value="other">Other</div>
                             </div>
                         </div>
                     </div>

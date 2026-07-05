@@ -1,8 +1,31 @@
-<html>
-    <head>
-        <meta charset="utf-8" />
-        <title>Censorship Page</title>
-        <link rel="stylesheet" href="/css/censor.css" />
-        <script src="/js/censor.js" type="module"></script>
-    </head>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Moderation - benchpoll</title>
+    <link rel="stylesheet" href="/css/global.css" />
+    <link rel="stylesheet" href="/css/censor.css" />
+    <script src="/js/censor.js" type="module"></script>
+</head>
+<body>
+    <global-header>
+        <a class="header-link" href="/">Rankings</a>
+        <a class="header-link" href="/contribute">Contribute</a>
+    </global-header>
+    <main class="censor-page">
+        <section class="censor-header">
+            <div>
+                <p class="eyebrow">MODERATION</p>
+                <h1>Contribution Queue</h1>
+            </div>
+            <select id="status-filter">
+                <option value="pending">Pending</option>
+                <option value="approved">Approved</option>
+                <option value="rejected">Rejected</option>
+            </select>
+        </section>
+        <section id="log-list" class="log-list"></section>
+    </main>
+</body>
 </html>

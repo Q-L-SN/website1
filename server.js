@@ -733,6 +733,30 @@ function buildContributionContent(body) {
     throw { status: 400 };
 }
 
+function parseModerationContent(content) {
+    if (content && typeof content === 'object') {
+        return content;
+    }
+    if (typeof content !== 'string') {
+        throw { status: 409, body: { error: 'invalid_submission_content' } };
+    }
+    try {
+        return JSON.parse(content);
+    } catch {
+        throw { status: 409, body: { error: 'invalid_submission_content' } };
+    }
+}
+
+function getModerationStatus(value, allowPending = true) {
+    const allowedStatuses = allowPending
+        ? new Set(['pending', 'approved', 'rejected'])
+        : new Set(['approved', 'rejected']);
+    if (!allowedStatuses.has(value)) {
+        throw { status: 400 };
+    }
+    return value;
+}
+
 API.post('/submit_contribution', requireAuthForAPI, async (req, res) => {
     const content = buildContributionContent(req.body);
     await db.execute(
@@ -740,6 +764,90 @@ API.post('/submit_contribution', requireAuthForAPI, async (req, res) => {
         [JSON.stringify(content), 1, req.session.userID]
     );
     res.status(204).end();
+});
+
+API.post('/list_moderation_logs', requireAdminAuthForAPI, async (req, res) => {
+    const status = getModerationStatus(req.body.status ?? 'pending');
+    const [rows] = await db.execute(`
+        SELECT
+        moderation_logs.ID,
+        moderation_logs.content,
+        moderation_logs.report_count,
+        moderation_logs.status,
+        moderation_logs.user_id,
+        moderation_logs.created_at,
+        moderation_logs.updated_at,
+        users.name AS userName
+        FROM moderation_logs
+        LEFT JOIN users ON users.ID = moderation_logs.user_id
+        WHERE moderation_logs.status = ?
+        ORDER BY moderation_logs.created_at ASC, moderation_logs.ID ASC
+        LIMIT 100`,
+        [status]
+    );
+    const logs = rows.map(row => ({
+        ...row,
+        content: parseModerationContent(row.content)
+    }));
+    res.json({ logs });
+});
+
+API.post('/review_moderation_log', requireAdminAuthForAPI, async (req, res, next) => {
+    const ID = Number(req.body.ID);
+    const status = getModerationStatus(req.body.status, false);
+    if (!Number.isInteger(ID) || ID <= 0) {
+        return next({ status: 400 });
+    }
+
+    const connection = await db.getConnection();
+    try {
+        await connection.beginTransaction();
+        const [logRows] = await connection.execute(
+            'SELECT * FROM moderation_logs WHERE ID = ? FOR UPDATE',
+            [ID]
+        );
+        if (logRows.length === 0) {
+            throw { status: 404 };
+        }
+        const log = logRows[0];
+        if (log.status !== 'pending') {
+            throw { status: 409, body: { error: 'already_reviewed' } };
+        }
+        const content = parseModerationContent(log.content);
+        if (status === 'approved' && content.type === 'new_benchmark') {
+            const [existingObjects] = await connection.execute(
+                'SELECT ID FROM objects WHERE name = ? LIMIT 1',
+                [content.name]
+            );
+            if (existingObjects.length > 0) {
+                throw { status: 409, body: { error: 'object_exists' } };
+            }
+            await connection.execute(`
+                INSERT INTO objects (name, input_modality, output_modality, is_realtime, url)
+                VALUES (?, ?, ?, ?, ?)`,
+                [
+                    content.name,
+                    content.inputModality,
+                    content.outputModality,
+                    content.isRealtime ? 1 : 0,
+                    content.url || null
+                ]
+            );
+        } else if (status === 'approved' && content.type !== 'report_issue') {
+            throw { status: 409, body: { error: 'unsupported_submission_type' } };
+        }
+        await connection.execute(
+            'UPDATE moderation_logs SET status = ?, updated_at = NOW() WHERE ID = ?',
+            [status, ID]
+        );
+        await connection.commit();
+        res.json({ status });
+    } catch (err) {
+        await connection.rollback();
+        throw err;
+    } finally {
+        connection.release();
+    }
 });
 
 API.post('/admin_login', async (req, res, next) => {
@@ -812,7 +920,10 @@ app.use((err, req, res, _next) => {
     if (err.status === undefined) {
         err.status = 500;
     }
-    console.log('[ERROR] FROM:', req.errorFrom, ' OBJECT:', err);
+    const logObject = err.type === 'entity.parse.failed'
+        ? { status: err.status, type: err.type, message: err.message }
+        : err;
+    console.log('[ERROR] FROM:', req.errorFrom, ' OBJECT:', logObject);
     switch (req.errorFrom) {
     case 'API':
         res.status(err.status).json(err.body);
@@ -822,6 +933,14 @@ app.use((err, req, res, _next) => {
         break;
     case 'callback-page':
         res.redirect('/dialogPage?errorCode=' + err.status + '&side=callback&' + new URLSearchParams(err.body).toString());
+        break;
+    default:
+        if (req.originalUrl?.startsWith('/api/')) {
+            const body = err.type === 'entity.parse.failed' ? { error: 'invalid_json' } : err.body;
+            res.status(err.status).json(body);
+            break;
+        }
+        res.redirect('/dialogPage?errorCode=' + err.status + '&side=server&' + new URLSearchParams(err.body).toString());
         break;
     }
 });

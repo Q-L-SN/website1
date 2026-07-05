@@ -2,6 +2,8 @@
 
 benchpoll is a Node.js/Express web app for browsing and voting on ranked benchmark objects. The app serves private HTML pages, public CSS/JS assets, GitHub OAuth login, session-backed user accounts, admin login, and ranking pages backed by a MySQL database.
 
+Users can submit benchmark reports or propose new benchmark objects through the contribution page. Admins review those submissions in the moderation queue before approved benchmark proposals are added to the `objects` table.
+
 ## Current Stack
 
 - Node.js with ES modules
@@ -83,6 +85,7 @@ Main table groups used by the code include:
 - `users`
 - `user_sessions`
 - `admin`
+- `moderation_logs`
 
 Template rankings are represented as repeated `categories` structure in the database. The backend derives `templatesList` from `categories.template` and `category_templates`, then the frontend uses the selected template path to refresh the object list.
 
@@ -129,6 +132,8 @@ Make sure local DNS/hosts and certificate setup match the domain you use in the 
 - `POST /api/get_device_count`
 - `POST /api/delete_account`
 - `POST /api/submit_contribution`
+- `POST /api/list_moderation_logs`
+- `POST /api/review_moderation_log`
 - `POST /api/admin_login`
 
 ## Development Notes
@@ -142,6 +147,8 @@ Make sure local DNS/hosts and certificate setup match the domain you use in the 
 # benchpoll 中文说明
 
 benchpoll 是一个基于 Node.js/Express 的网页应用，用于浏览、投票和展示 benchmark 对象排行。项目包含私有 HTML 页面、公开 CSS/JS 静态资源、GitHub OAuth 登录、基于 session 的用户账号、管理员登录，以及由 MySQL 数据库驱动的排行页面。
+
+用户可以通过共创页面上报 benchmark 信息问题，或提交新的 benchmark 对象提案。管理员在审核队列中处理这些提交，审核通过的新 benchmark 会写入 `objects` 表。
 
 ## 当前技术栈
 
@@ -224,6 +231,7 @@ database: benchmarks
 - `users`
 - `user_sessions`
 - `admin`
+- `moderation_logs`
 
 模板排行通过数据库中重复的 `categories` 结构表达。后端根据 `categories.template` 和 `category_templates` 派生出 `templatesList`，前端再用选中的模板路径刷新对象列表。
 
@@ -270,6 +278,8 @@ https://benchpoll.com:1337
 - `POST /api/get_device_count`
 - `POST /api/delete_account`
 - `POST /api/submit_contribution`
+- `POST /api/list_moderation_logs`
+- `POST /api/review_moderation_log`
 - `POST /api/admin_login`
 
 ## 开发注意事项

@@ -1,6 +1,5 @@
 import * as S from '/js/shared.js';
 import * as G from '/js/global.js';
-import { get } from 'fast-levenshtein';
 
 const loginButton = document.getElementById('login-button');
 const logoutButton = document.getElementById('logout-button');
@@ -27,10 +26,16 @@ const objectList = document.getElementById('object-list');
 const globalSearch = document.getElementById('global-search');
 const suggestions = document.getElementById('suggestions');
 const treeContent = document.getElementById('tree-content');
+const modalitySelects = document.querySelectorAll('.custom-select');
 
 let currentCategoryID;
 let currentVoteTargetCategoryID;
 let currentUserProfile;
+let currentObjects = [];
+const activeFilters = {
+    inputModality: '',
+    outputModality: ''
+};
 
 function isTemplateSet(templateID) {
     return templateID !== null && templateID !== undefined;
@@ -38,6 +43,22 @@ function isTemplateSet(templateID) {
 
 function normalizeURLPart(value) {
     return String(value).toLowerCase();
+}
+
+function normalizeModality(value) {
+    return String(value ?? '').toLowerCase();
+}
+
+function objectMatchesActiveFilters(obj) {
+    return (!activeFilters.inputModality || normalizeModality(obj.input_modality) === activeFilters.inputModality)
+        && (!activeFilters.outputModality || normalizeModality(obj.output_modality) === activeFilters.outputModality);
+}
+
+function createNoResultsMessage(text) {
+    const noResults = document.createElement('div');
+    noResults.className = 'no-results';
+    noResults.textContent = text;
+    return noResults;
 }
 
 function updateUserProfileDisplay(newProfile) {
@@ -200,6 +221,67 @@ function createListItem(obj) {
     return objItem;
 }
 
+function renderObjectList(objects) {
+    const filteredObjects = objects.filter(objectMatchesActiveFilters);
+    objectList.replaceChildren(suggestions);
+    if (filteredObjects.length === 0) {
+        objectList.append(createNoResultsMessage('No benchmarks match the selected filters'));
+        return;
+    }
+    for (const obj of filteredObjects) {
+        objectList.append(createListItem(obj));
+    }
+}
+
+function refreshObjectDisplay() {
+    if (globalSearch.value.trim() !== '') {
+        searchInCurrentCategory(globalSearch.value);
+        return;
+    }
+    renderObjectList(currentObjects);
+}
+
+function closeModalitySelects(exceptSelect = null) {
+    modalitySelects.forEach(select => {
+        if (select !== exceptSelect) {
+            select.classList.remove('open');
+        }
+    });
+}
+
+function syncFilterFromSelect(select) {
+    const selectedOption = select.querySelector('.option.selected');
+    const value = selectedOption?.dataset.value ?? '';
+    select.querySelector('.selected-value').textContent = selectedOption?.textContent ?? 'Any';
+    if (select.id === 'select-input-modality') {
+        activeFilters.inputModality = value;
+    } else if (select.id === 'select-output-modality') {
+        activeFilters.outputModality = value;
+    }
+}
+
+modalitySelects.forEach(select => {
+    syncFilterFromSelect(select);
+    select.querySelector('.select-trigger').addEventListener('click', event => {
+        event.stopPropagation();
+        const shouldOpen = !select.classList.contains('open');
+        closeModalitySelects();
+        select.classList.toggle('open', shouldOpen);
+    });
+    select.querySelectorAll('.option').forEach(option => {
+        option.addEventListener('click', event => {
+            event.stopPropagation();
+            select.querySelector('.option.selected')?.classList.remove('selected');
+            option.classList.add('selected');
+            syncFilterFromSelect(select);
+            closeModalitySelects();
+            refreshObjectDisplay();
+        });
+    });
+});
+
+document.addEventListener('click', () => closeModalitySelects());
+
 fetch(`/api/get_page${window.location.pathname}`, {
     method: 'POST',
     headers: {
@@ -215,10 +297,8 @@ fetch(`/api/get_page${window.location.pathname}`, {
         S.breakInThen();
     }
     function generateObjectList(objects) {
-        objectList.replaceChildren(suggestions);
-        for (const obj of objects) {
-            objectList.append(createListItem(obj));
-        }
+        currentObjects = objects;
+        renderObjectList(currentObjects);
     }
     async function generateFolderTree(location, point) {
 
@@ -471,13 +551,11 @@ async function searchInCurrentCategory(query) {
     .then(response => G.checkErrorCodeInURL(response))
     .then(data => {
         suggestions.replaceChildren();
-        if (data.length == 0) {
-            const noResults = document.createElement('div');
-            noResults.className = 'no-results';
-            noResults.textContent = 'No results found'; // 不用innerText
-            suggestions.append(noResults);
+        const filteredResults = data.filter(objectMatchesActiveFilters);
+        if (filteredResults.length == 0) {
+            suggestions.append(createNoResultsMessage('No results found'));
         }
-        for (const suggestion of data) {
+        for (const suggestion of filteredResults) {
             suggestions.append(createListItem(suggestion));
         }
     });
