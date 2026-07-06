@@ -102,6 +102,7 @@
     gap: 8px;
     padding: 6px 12px;
     cursor: pointer;
+    text-decoration: none;
 }
 #logout-button {
     color: var(--text-secondary);
@@ -114,6 +115,15 @@
     align-items: center;
     gap: 8px;
     color: var(--text-secondary);
+}
+#contribute-button {
+    align-items: center;
+    color: var(--text-secondary);
+    border: 1px solid var(--border-color);
+}
+#contribute-button:hover {
+    background-color: var(--bg-hover);
+    color: var(--text-primary);
 }
 
 /* ================= 主布局 ================= */
