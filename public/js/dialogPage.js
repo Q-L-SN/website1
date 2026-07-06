@@ -7,11 +7,25 @@ const displayURL = new URLSearchParams(location.search).get('displayURL');
 
 G.editURL(displayURL ?? document.referrer, false, false);
 
-G.listenStorageChange('user-profile', function(newValue) {
+function handleUserProfileUpdate(newValue) {
     if (newValue !== null) {
         G.editURL(displayURL, false, true);
     }
+}
+
+G.listenStorageChange('user-profile-update', handleUserProfileUpdate);
+window.addEventListener('message', event => {
+    if (event.origin === window.location.origin && event.data?.type === 'user-profile-update') {
+        event.source?.postMessage({ type: 'user-profile-update-received' }, event.origin);
+        handleUserProfileUpdate(event.data.payload);
+    }
 });
+
+const pendingProfileUpdate = localStorage.getItem('user-profile-update-pending');
+if (pendingProfileUpdate !== null) {
+    localStorage.removeItem('user-profile-update-pending');
+    handleUserProfileUpdate(JSON.parse(pendingProfileUpdate));
+}
 
 const errorCode = G.params.get('errorCode'); // side !== 'client'
 const oldURL = G.params.get('oldURL'); // dialogCode === 2 || dialogCode === 3

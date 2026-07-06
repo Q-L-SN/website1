@@ -32,6 +32,7 @@ let currentCategoryID;
 let currentVoteTargetCategoryID;
 let currentUserProfile;
 let currentObjects = [];
+let lastHandledProfileUpdateDate = null;
 const activeFilters = {
     inputModality: '',
     outputModality: ''
@@ -149,27 +150,56 @@ function submitVote(objItem, targetObjectID, value) {
     });
 }
 
-G.listenStorageChange('user-profile-update', newProfile => {
+function loadUserProfile() {
+    return fetch('/api/get_user_profile', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => {
+        if (response.status === 204) {
+            return null;
+        }
+        return G.checkErrorCodeInURL(response);
+    })
+    .then(data => {
+        if (data !== null && data !== undefined) {
+            updateUserProfileDisplay(data);
+        }
+        return data;
+    });
+}
+
+function handleUserProfileUpdate(newProfile) {
     if (newProfile !== null) {
-        loginSuccessDialog.hidden = false; // 显示登录成功对话框
+        if (newProfile?.date && newProfile.date === lastHandledProfileUpdateDate) {
+            return;
+        }
+        lastHandledProfileUpdateDate = newProfile?.date ?? new Date().toISOString();
+        loadUserProfile().finally(() => {
+            loginSuccessDialog.hidden = false; // 显示登录成功对话框
+        });
     } else {
-        logoutSuccessDialog.hidden = false; // 显示登出成功对话框
+        return;
+    }
+}
+
+G.listenStorageChange('user-profile-update', handleUserProfileUpdate);
+window.addEventListener('message', event => {
+    if (event.origin === window.location.origin && event.data?.type === 'user-profile-update') {
+        event.source?.postMessage({ type: 'user-profile-update-received' }, event.origin);
+        handleUserProfileUpdate(event.data.payload);
     }
 });
 
-fetch('/api/get_user_profile', {
-    method: 'POST',
-    headers: {
-        'Content-Type': 'application/json'
-    }
-})
-.then(response => {
-    if (response.status === 204) {
-        S.breakInThen() //在这里直接用return会传给下一个then，所以不能用
-    }
-    return G.checkErrorCodeInURL(response);
-})
-.then(data => updateUserProfileDisplay(data));
+const pendingProfileUpdate = localStorage.getItem('user-profile-update-pending');
+if (pendingProfileUpdate !== null) {
+    localStorage.removeItem('user-profile-update-pending');
+    handleUserProfileUpdate(JSON.parse(pendingProfileUpdate));
+}
+
+loadUserProfile();
 
 function createListItem(obj) {
     const objItem = document.createElement('div');
