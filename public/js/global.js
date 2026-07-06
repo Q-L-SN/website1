@@ -19,7 +19,6 @@ export function editURL(newURL, pushInHistory, withRequest) {
     }
 }
 
-export const GITHUB_AUTH_URL = 'https://github.com/login/oauth/authorize?client_id=' + S.CLIENT_ID;
 export const SUPPORT_EMAIL_ADDRESS = 'support@yourdomain.com' // 示例邮箱
 export const APPEAL_EMAIL_SUBJECT = 'Appeal for Suspended Account';
 
@@ -44,7 +43,11 @@ export function openCenterPopup(url, title, width, height) {  // 居中显示win
 }
 
 export function loginWithGitHub() {
-    openCenterPopup(GITHUB_AUTH_URL, 'Login with GitHub', 600, 700);
+    const params = new URLSearchParams({
+        client_id: S.CLIENT_ID,
+        redirect_uri: window.location.origin + '/github_callback'
+    });
+    openCenterPopup('https://github.com/login/oauth/authorize?' + params.toString(), 'Login with GitHub', 600, 700);
 }
 
 export function listenStorageChange(key, callback) {
