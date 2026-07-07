@@ -609,7 +609,7 @@ logoutButton.addEventListener('click', () => {
     });
 });
 
-revokeGitHubAuthLink.href = 'https://github.com/settings/apps/authorizations/' + S.CLIENT_ID;
+revokeGitHubAuthLink.href = 'https://github.com/settings/connections/applications/' + S.CLIENT_ID;
 revokeGitHubAuthLink.textContent = revokeGitHubAuthLink.href;
 deleteAccountButton.addEventListener('click', () => {
     deleteAccountDialog.hidden = false;
