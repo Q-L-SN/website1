@@ -4,17 +4,20 @@ import * as G from '/js/global.js';
 const dialogCode = Number(G.params.get('dialogCode') || 1); // 默认为Not Found错误
 const side = G.params.get('side');
 const displayURL = new URLSearchParams(location.search).get('displayURL');
+const oldURL = G.params.get('oldURL'); // dialogCode === 2 || dialogCode === 3
 
 G.editURL(displayURL ?? document.referrer, false, false);
 
-G.listenStorageChange('user-profile', function(newValue) {
+function handleUserProfileUpdate(newValue) {
     if (newValue !== null) {
-        G.editURL(displayURL, false, true);
+        G.editURL(displayURL ?? oldURL ?? '/', false, true);
     }
-});
+}
+
+G.listenStorageChange('user-profile-update', handleUserProfileUpdate);
+G.listenStorageChange('user-profile', handleUserProfileUpdate);
 
 const errorCode = G.params.get('errorCode'); // side !== 'client'
-const oldURL = G.params.get('oldURL'); // dialogCode === 2 || dialogCode === 3
 const minAge = G.params.get('minAge'); // dialogCode === 4
 const actualAge = G.params.get('actualAge') // dialogCode === 4
 const bannedUntil = new Intl.DateTimeFormat(navigator.language, {
