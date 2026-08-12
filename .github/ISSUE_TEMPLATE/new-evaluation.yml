@@ -1,0 +1,132 @@
+name: Add an evaluation object
+description: Propose a benchmark, arena, protocol, or other evaluation object.
+title: "[Evaluation] Add "
+labels:
+  - contribution
+  - contribution:evaluation
+  - status:needs-review
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Evaluation objects are global records. The entry context below does not permanently bind the object to one category.
+  - type: input
+    id: name
+    attributes:
+      label: Evaluation name
+      placeholder: PaperBench
+    validations:
+      required: true
+  - type: dropdown
+    id: objectType
+    attributes:
+      label: Evaluation type
+      options:
+        - Benchmark
+        - Arena
+        - Evaluation protocol
+        - Other evaluation method
+    validations:
+      required: true
+  - type: input
+    id: canonicalURL
+    attributes:
+      label: Canonical source URL
+      description: Link to the official project, paper, repository, or specification.
+      placeholder: https://...
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: What it evaluates
+      description: Summarize the target capability and evaluation procedure.
+    validations:
+      required: true
+  - type: dropdown
+    id: inputModality
+    attributes:
+      label: Input modality
+      options:
+        - Unknown
+        - Text
+        - Image
+        - Audio
+        - Video
+        - Mixed
+        - Action
+        - Other
+    validations:
+      required: true
+  - type: dropdown
+    id: outputModality
+    attributes:
+      label: Output modality
+      options:
+        - Unknown
+        - Text
+        - Image
+        - Audio
+        - Video
+        - Mixed
+        - Action
+        - Other
+    validations:
+      required: true
+  - type: dropdown
+    id: realtime
+    attributes:
+      label: Requires real-time interaction
+      options:
+        - Unknown
+        - "Yes"
+        - "No"
+    validations:
+      required: true
+  - type: input
+    id: scoreMin
+    attributes:
+      label: Minimum possible score
+      placeholder: "0"
+    validations:
+      required: true
+  - type: input
+    id: scoreMax
+    attributes:
+      label: Maximum possible score
+      placeholder: "100"
+    validations:
+      required: true
+  - type: dropdown
+    id: scoreDirection
+    attributes:
+      label: Score direction
+      options:
+        - Higher is better
+        - Lower is better
+    validations:
+      required: true
+  - type: input
+    id: categoryPath
+    attributes:
+      label: BenchPoll entry context
+      description: The category from which this form was opened. This is not permanent ownership.
+      placeholder: AI Evaluation/Coding
+  - type: textarea
+    id: notes
+    attributes:
+      label: Additional notes
+      description: Optional release context or methodology notes.
+  - type: input
+    id: pageURL
+    attributes:
+      label: BenchPoll source page
+      description: Automatically prefilled when opened from BenchPoll.
+      placeholder: https://benchpoll.com/rankings/...
+  - type: checkboxes
+    id: confirmation
+    attributes:
+      label: Confirmation
+      options:
+        - label: I checked that this evaluation object is not already listed under another name.
+          required: true

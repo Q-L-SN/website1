@@ -1,0 +1,76 @@
+name: Correct evaluation information
+description: Correct or add information for an existing evaluation object.
+title: "[Evaluation change] "
+labels:
+  - contribution
+  - contribution:evaluation-change
+  - status:needs-review
+body:
+  - type: markdown
+    attributes:
+      value: |
+        The target name and ID are prefilled when this form is opened from an evaluation row.
+  - type: input
+    id: targetName
+    attributes:
+      label: Evaluation name
+      description: Automatically prefilled by BenchPoll.
+    validations:
+      required: true
+  - type: input
+    id: targetObjectID
+    attributes:
+      label: BenchPoll evaluation ID
+      description: Automatically prefilled by BenchPoll. Leave unchanged when present.
+  - type: dropdown
+    id: changeScope
+    attributes:
+      label: Information to change
+      options:
+        - Name or aliases
+        - Evaluation type
+        - Description or methodology
+        - Canonical URL or source
+        - Input or output modality
+        - Score range or direction
+        - Real-time status
+        - Other information
+    validations:
+      required: true
+  - type: textarea
+    id: currentValue
+    attributes:
+      label: Current information
+      description: Quote or summarize the information that is incomplete or incorrect.
+    validations:
+      required: true
+  - type: textarea
+    id: proposedValue
+    attributes:
+      label: Proposed information
+      description: State the exact value or wording that should replace or supplement it.
+    validations:
+      required: true
+  - type: input
+    id: sourceURL
+    attributes:
+      label: Verifiable source URL
+      placeholder: https://...
+    validations:
+      required: true
+  - type: textarea
+    id: details
+    attributes:
+      label: Additional context
+      description: Optional notes for the reviewer.
+  - type: input
+    id: categoryPath
+    attributes:
+      label: BenchPoll entry context
+      description: The category where the row was viewed; not permanent object ownership.
+  - type: input
+    id: pageURL
+    attributes:
+      label: BenchPoll source page
+      description: Automatically prefilled when opened from BenchPoll.
+      placeholder: https://benchpoll.com/rankings/...

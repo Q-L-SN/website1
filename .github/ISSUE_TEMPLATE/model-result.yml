@@ -1,0 +1,112 @@
+name: Contribute a model result
+description: Submit a model score from an authoritative, publicly verifiable source.
+title: "[Model result] "
+labels:
+  - contribution
+  - contribution:model-result
+  - status:needs-review
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Submit one model and evaluation result per issue. Results must have a public source reviewers can verify.
+  - type: input
+    id: vendorName
+    attributes:
+      label: Model vendor or organization
+      placeholder: OpenAI
+    validations:
+      required: true
+  - type: input
+    id: modelName
+    attributes:
+      label: Model name and variant
+      placeholder: GPT-5
+    validations:
+      required: true
+  - type: input
+    id: modelID
+    attributes:
+      label: BenchPoll model ID
+      description: Optional when the model is not yet registered.
+  - type: input
+    id: modelURL
+    attributes:
+      label: Official model URL
+      placeholder: https://...
+  - type: input
+    id: evaluationName
+    attributes:
+      label: Evaluation name
+      placeholder: SWE-bench Verified
+    validations:
+      required: true
+  - type: input
+    id: evaluationID
+    attributes:
+      label: BenchPoll evaluation ID
+      description: Optional when unavailable.
+  - type: input
+    id: rawScore
+    attributes:
+      label: Reported score
+      description: Enter the published numeric value without converting its scale.
+      placeholder: "74.8"
+    validations:
+      required: true
+  - type: dropdown
+    id: sourceType
+    attributes:
+      label: Source type
+      options:
+        - Model vendor official
+        - Third-party laboratory
+        - Research paper
+        - Other verifiable source
+    validations:
+      required: true
+  - type: input
+    id: sourceTitle
+    attributes:
+      label: Source title
+      placeholder: Release post, paper, or report title
+    validations:
+      required: true
+  - type: input
+    id: sourceURL
+    attributes:
+      label: Direct source URL
+      description: Link as closely as possible to the table, appendix, or result.
+      placeholder: https://...
+    validations:
+      required: true
+  - type: textarea
+    id: evaluationSettings
+    attributes:
+      label: Evaluation settings and model configuration
+      description: Include variant, prompting, tools, pass count, or other settings needed to interpret the score.
+    validations:
+      required: true
+  - type: textarea
+    id: notes
+    attributes:
+      label: Additional notes
+      description: Optional.
+  - type: input
+    id: categoryPath
+    attributes:
+      label: BenchPoll entry context
+      description: Automatically prefilled when opened from a ranking context.
+  - type: input
+    id: pageURL
+    attributes:
+      label: BenchPoll source page
+      description: Automatically prefilled when opened from BenchPoll.
+      placeholder: https://benchpoll.com/rankings/...
+  - type: checkboxes
+    id: confirmation
+    attributes:
+      label: Verification
+      options:
+        - label: The source is public and the submitted score matches it exactly.
+          required: true

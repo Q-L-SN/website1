@@ -1,0 +1,73 @@
+name: Add a category
+description: Propose a new category under the current taxonomy.
+title: "[Category] Add "
+labels:
+  - contribution
+  - contribution:category
+  - status:needs-review
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Propose one category at a time. The parent path is prefilled when this form is opened from BenchPoll.
+  - type: input
+    id: parentPath
+    attributes:
+      label: Parent category path
+      description: Use `/` for the root. When prefilled by BenchPoll, leave this unchanged unless the page context is stale.
+      placeholder: AI Evaluation/Coding
+    validations:
+      required: true
+  - type: input
+    id: parentName
+    attributes:
+      label: Parent category name
+      description: The display name of the selected parent category, if available.
+  - type: input
+    id: name
+    attributes:
+      label: New category name
+      placeholder: Software Engineering
+    validations:
+      required: true
+  - type: dropdown
+    id: nodeKind
+    attributes:
+      label: Category behavior
+      options:
+        - May contain subcategories
+        - Intended as a leaf category
+    validations:
+      required: true
+  - type: textarea
+    id: definition
+    attributes:
+      label: Definition and scope
+      description: Explain what belongs in this category and what should remain outside it.
+      placeholder: This category covers...
+    validations:
+      required: true
+  - type: input
+    id: sourceURL
+    attributes:
+      label: Supporting source URL
+      description: Optional public source that helps reviewers verify the terminology or scope.
+      placeholder: https://...
+  - type: textarea
+    id: notes
+    attributes:
+      label: Additional notes
+      description: Optional.
+  - type: input
+    id: pageURL
+    attributes:
+      label: BenchPoll source page
+      description: Automatically prefilled when opened from BenchPoll.
+      placeholder: https://benchpoll.com/rankings/...
+  - type: checkboxes
+    id: confirmation
+    attributes:
+      label: Confirmation
+      options:
+        - label: I checked that this category does not already exist under the proposed parent.
+          required: true

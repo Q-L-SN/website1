@@ -1,0 +1,63 @@
+name: Correct, move, or delete a category
+description: Report a category issue or request a taxonomy change.
+title: "[Category change] "
+labels:
+  - contribution
+  - contribution:category-change
+  - status:needs-review
+body:
+  - type: dropdown
+    id: changeType
+    attributes:
+      label: Requested change
+      options:
+        - Correct category information
+        - Move category
+        - Delete category
+        - Report another category problem
+    validations:
+      required: true
+  - type: input
+    id: categoryPath
+    attributes:
+      label: Current category path
+      description: Automatically prefilled from the selected BenchPoll category.
+      placeholder: AI Evaluation/Coding/Software Engineering
+    validations:
+      required: true
+  - type: input
+    id: targetName
+    attributes:
+      label: Current category name
+      description: Automatically prefilled when available.
+  - type: input
+    id: destinationPath
+    attributes:
+      label: Proposed destination path
+      description: Required only for a move request.
+      placeholder: AI Evaluation/Agentic Workflows
+  - type: textarea
+    id: details
+    attributes:
+      label: Requested result and rationale
+      description: Describe the exact correction, move, deletion, or problem and why it is needed.
+    validations:
+      required: true
+  - type: input
+    id: sourceURL
+    attributes:
+      label: Supporting source URL
+      placeholder: https://...
+  - type: input
+    id: pageURL
+    attributes:
+      label: BenchPoll source page
+      description: Automatically prefilled when opened from BenchPoll.
+      placeholder: https://benchpoll.com/rankings/...
+  - type: checkboxes
+    id: confirmation
+    attributes:
+      label: Confirmation
+      options:
+        - label: I understand that taxonomy changes can affect multiple ranking contexts.
+          required: true
